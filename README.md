@@ -1,188 +1,119 @@
 # Themis
-# Residential Construction Cost Estimation Decision Support System (DSS)
 
-## 1. Introduction
-The Residential Construction Cost Estimation DSS is an engineering decision support system designed to help non-technical users estimate the cost, feasibility, and material requirements of constructing a residential building. The system combines rule-based reasoning, database storage, and a graphical interface to simulate expert-level construction planning guidance. Its goal is to support informed decision-making before construction begins, reducing the likelihood of unrealistic budgets, unsafe designs, or poor planning.
+Themis is a residential construction cost estimation decision support system built with Python, Prolog, and SQLite. It allows a user to enter high-level building requirements, applies rule-based reasoning through SWI-Prolog, and returns an estimate with material breakdown, feasibility status, and explanation.
 
----
+## Features
 
-## 2. Problem Statement
-Many individuals who want to build houses lack technical knowledge about construction requirements, material quantities, and realistic cost estimates. Without professional guidance, they may underestimate expenses or design structures that are structurally impractical. This system addresses that gap by providing automated decision support that evaluates user specifications and generates intelligent recommendations.
+- Generates residential construction estimates from user inputs
+- Uses Prolog as the primary knowledge base and inference layer
+- Explains why an estimate was classified as feasible, conditional, or not feasible
+- Supports both a command-line interface and a simple Tkinter GUI
+- Stores completed estimates and material breakdowns in SQLite
 
----
+## Architecture
 
-## 3. Objectives
+The system is split into three main parts:
 
-### 3.1 Main Objective
-To develop a decision support system that evaluates residential construction specifications and generates feasibility assessments, cost estimates, and material breakdowns.
+- Prolog handles the construction reasoning in `src/knowledge_base.pl`
+- Python handles interaction, parsing, and application flow
+- SQLite stores estimates for history and traceability
 
-### 3.2 Specific Objectives
-- Estimate total construction cost
-- Determine required material quantities
-- Evaluate structural feasibility
-- Explain reasoning behind decisions
-- Recommend improvements if constraints are violated
-- Store previous estimates for reference
+In practice, the workflow is:
 
----
+1. The user enters building details.
+2. Python sends those inputs to Prolog.
+3. Prolog evaluates the rules and returns an estimate.
+4. Python displays the result and saves it to SQLite.
 
-## 4. System Architecture
-The system follows a modular decision support architecture consisting of the following components:
+## Project Structure
 
-User → GUI → Controller → Inference Engine ↔ Knowledge Base → Database
+```text
+src/
+  app.py              CLI entry point
+  gui.py              Tkinter GUI entry point
+  prolog_service.py   Prolog query, parsing, and formatting helpers
+  database.py         SQLite initialization and persistence
+  knowledge_base.pl   Prolog rules and inference logic
 
-### Component Descriptions
-- **GUI:** Collects user inputs and displays results
-- **Controller:** Coordinates communication between system modules
-- **Inference Engine:** Applies decision rules to inputs
-- **Knowledge Base:** Contains engineering rules and logic
-- **Database:** Stores materials, templates, and generated estimates
+data/
+  themis.db           SQLite database file (generated at runtime)
+```
 
----
+## Requirements
 
-## 5. Inputs
-The user provides simplified construction requirements:
+- Python 3.12 or later
+- SWI-Prolog installed system-wide
+- A Python virtual environment with project dependencies installed
 
-- Number of bedrooms
-- Number of floors
-- Finish level (basic, standard, luxury)
-- Location type (urban or rural)
-- Roof type
-- Budget (optional)
+## Installation
 
-These inputs represent high-level design intentions rather than technical engineering parameters.
+1. Create and activate a virtual environment.
+2. Install Python dependencies.
+3. Ensure SWI-Prolog is installed and available on your system path.
 
----
+Example setup:
 
-## 6. Database Design
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+sudo apt install swi-prolog
+```
 
-### Materials Table
-Stores construction material properties and prices.
+## Running the Application
 
-Fields:
-- material_name
-- unit_price
-- strength
-- max_temperature
+Run the CLI version:
 
----
+```bash
+./venv/bin/python src/app.py
+```
 
-### Design Templates Table
-Stores predefined construction quantity estimates.
+Run the Tkinter GUI:
 
-Fields:
-- bedrooms
-- floors
-- cement_quantity
-- steel_quantity
-- brick_quantity
+```bash
+./venv/bin/python src/gui.py
+```
 
----
+## Example Workflow
 
-### Estimates Table
-Stores generated results for record keeping.
+Example input:
 
-Fields:
-- estimate_id
-- specifications
-- total_cost
-- decision
-- timestamp
+- Bedrooms: `3`
+- Floors: `2`
+- Finish: `standard`
+- Location: `urban`
+- Roof type: `hip`
+- Budget: `8000000`
 
----
+Example result:
 
-## 7. Knowledge Base
-The knowledge base contains logical rules representing engineering reasoning. Examples include:
+- Total area is calculated from bedrooms and floors
+- Material quantities are adjusted by structural rules
+- Cost multipliers are applied based on finish, location, and roof type
+- A feasibility decision is returned with explanation reasons
 
-- Multi-storey buildings require reinforced structures
-- Reinforced structures increase steel usage
-- Luxury finishes increase overall cost
-- Designs exceeding budget constraints are infeasible
-- Certain roof types require additional structural support
+## Data Storage
 
-These rules allow the system to mimic expert construction planning logic.
+The application creates a local SQLite database at `data/themis.db`.
 
----
+It currently stores:
 
-## 8. Inference Engine
-The inference engine evaluates user input against stored rules to determine:
+- `estimates`: user inputs, total area, costs, feasibility, reasons, timestamp
+- `estimate_materials`: per-estimate material quantities and units
 
-- structural requirements
-- cost multipliers
-- constraint violations
-- feasibility status
+## Limitations
 
-Instead of relying only on formulas, the engine performs logical reasoning, making the system intelligent rather than computational only.
+- Estimates are indicative and should not replace professional engineering or quantity surveying advice
+- Material prices and reasoning rules are currently defined in the Prolog knowledge base
+- The system works from simplified residential inputs rather than full architectural plans
 
----
+## Future Work
 
-## 9. Outputs
-After processing, the system produces:
+- Add estimate history viewing from the application
+- Improve explanation formatting from Prolog outputs
+- Expand the knowledge base with more construction rules and constraints
+- Add richer reporting and export options
 
-### Estimated Cost
-Total projected construction expense based on selected specifications.
+## License
 
-### Material Breakdown
-List of required materials and their quantities.
-
-### Feasibility Decision
-One of:
-- Feasible
-- Conditionally Feasible
-- Not Feasible
-
-### Explanation
-A clear statement describing why the system reached its conclusion.
-
-Example:
-> The design requires reinforced structural support because it has more than one floor.
-
----
-
-## 10. Decision Support Characteristics
-The system satisfies key DSS properties:
-
-- interactive user interface
-- rule-based reasoning
-- database integration
-- explanation capability
-- decision traceability
-- structured logic evaluation
-
----
-
-## 11. Technologies Used
-
-- GUI: Python Tkinter
-- Logic Engine: Prolog
-- Database: SQLite
-- Query Language: SQL
-
----
-
-## 12. Benefits
-This system helps users:
-
-- understand realistic construction costs
-- plan budgets more effectively
-- explore different design options
-- identify structural constraints early
-- make informed construction decisions
-
----
-
-## 13. Limitations
-The system provides estimated results rather than exact costs. Real-world costs may vary due to:
-
-- market price fluctuations
-- labor charges
-- contractor fees
-- legal permits
-- site-specific conditions
-
----
-
-## 14. Conclusion
-The Residential Construction Cost Estimation DSS demonstrates how decision support systems can assist real-world engineering planning through the integration of databases, logical reasoning, and interactive interfaces. By translating expert construction knowledge into programmable rules, the system enables non-technical users to make informed and realistic building decisions.
-
-This project illustrates the practical value of decision support technology in civil engineering planning while showcasing the integration of multiple computing concepts including databases, logic programming, and system design.
+No license has been specified yet.
