@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .database import DATABASE_PATH, MATERIAL_UNITS, save_estimate
+    from .database import DATABASE_PATH, load_reference_data, save_estimate
 except ImportError:
-    from database import DATABASE_PATH, MATERIAL_UNITS, save_estimate
+    from database import DATABASE_PATH, load_reference_data, save_estimate
 
 KNOWLEDGE_BASE_PATH = Path(__file__).with_name("knowledge_base.pl")
 
@@ -115,6 +115,7 @@ def format_estimate_text(parsed: dict[str, Any], estimate_id: int | None = None)
     if "area" not in parsed:
         return parsed["raw"]
 
+    material_units = load_reference_data()["material_units"]
     lines = [
         "ESTIMATION RESULT",
         "",
@@ -128,15 +129,12 @@ def format_estimate_text(parsed: dict[str, Any], estimate_id: int | None = None)
 
     for material, quantity in parsed["materials"].items():
         lines.append(
-            f"- {material.capitalize()}: {quantity:.2f} {MATERIAL_UNITS[material]}"
+            f"- {material.capitalize()}: {quantity:.2f} {material_units[material]}"
         )
 
     lines.extend(["", "Explanation:"])
     for reason in parsed["reasons"]:
         lines.append(f"- {reason}")
-
-    if estimate_id is not None:
-        lines.extend(["", f"Saved estimate #{estimate_id} to {DATABASE_PATH}."])
 
     return "\n".join(lines)
 
@@ -174,7 +172,33 @@ def build_prolog_service():
 
     prolog = Prolog()
     prolog.consult(str(KNOWLEDGE_BASE_PATH))
+    sync_reference_data(prolog)
     return prolog
+
+
+def sync_reference_data(prolog: Any) -> None:
+    reference_data = load_reference_data()
+
+    list(prolog.query("retractall(material_price(_, _))"))
+    list(prolog.query("retractall(finish_multiplier(_, _))"))
+    list(prolog.query("retractall(location_multiplier(_, _))"))
+    list(prolog.query("retractall(roof_cost_multiplier(_, _))"))
+    list(prolog.query("retractall(estimation_factor(_, _))"))
+
+    for material_name, unit_price in reference_data["material_prices"].items():
+        list(prolog.query(f"assertz(material_price({material_name}, {unit_price}))"))
+
+    for finish_level, multiplier in reference_data["finish_multipliers"].items():
+        list(prolog.query(f"assertz(finish_multiplier({finish_level}, {multiplier}))"))
+
+    for location_type, multiplier in reference_data["location_multipliers"].items():
+        list(prolog.query(f"assertz(location_multiplier({location_type}, {multiplier}))"))
+
+    for roof_type, multiplier in reference_data["roof_cost_multipliers"].items():
+        list(prolog.query(f"assertz(roof_cost_multiplier({roof_type}, {multiplier}))"))
+
+    for factor_name, value in reference_data["estimation_factors"].items():
+        list(prolog.query(f"assertz(estimation_factor({factor_name}, {value}))"))
 
 
 def query_estimate(prolog: Any, inputs: dict[str, Any]) -> dict[str, Any]:

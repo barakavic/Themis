@@ -1,37 +1,40 @@
-% ---------- Constants ----------
-material_price(cement, 750).
-material_price(steel, 120).
-material_price(bricks, 15).
-material_price(timber, 45000).
-
-finish_multiplier(basic, 1.00).
-finish_multiplier(standard, 1.15).
-finish_multiplier(luxury, 1.35).
-
-location_multiplier(rural, 1.00).
-location_multiplier(urban, 1.20).
-
-roof_cost_multiplier(gable, 1.00).
-roof_cost_multiplier(hip, 1.08).
-roof_cost_multiplier(flat, 1.12).
+:- dynamic material_price/2.
+:- dynamic finish_multiplier/2.
+:- dynamic location_multiplier/2.
+:- dynamic roof_cost_multiplier/2.
+:- dynamic estimation_factor/2.
 
 % ---------- Area ----------
 calculate_area(BedroomCount, FloorCount, TotalArea) :-
-    BedroomArea is BedroomCount * 12,
-    FunctionalArea is BedroomArea * 2.5,
-    AreaWithCirculation is FunctionalArea * 1.20,
+    estimation_factor(bedroom_area, BedroomAreaFactor),
+    estimation_factor(functional_area_multiplier, FunctionalAreaMultiplier),
+    estimation_factor(circulation_factor, CirculationFactor),
+    BedroomArea is BedroomCount * BedroomAreaFactor,
+    FunctionalArea is BedroomArea * FunctionalAreaMultiplier,
+    AreaWithCirculation is FunctionalArea * (1 + CirculationFactor),
     TotalArea is AreaWithCirculation * FloorCount.
 
 % ---------- Materials ----------
 calculate_materials(TotalArea, FloorCount, RoofType,
                     materials(CementQuantity, SteelQuantity, BrickQuantity, TimberQuantity),
                     MaterialReasons) :-
-    CementQuantity is TotalArea * 5,
-    BaseSteelQuantity is TotalArea * 35,
-    BaseTimberQuantity is TotalArea * 0.03,
+    estimation_factor(cement_per_m2, CementPerSquareMetre),
+    estimation_factor(steel_per_m2, SteelPerSquareMetre),
+    estimation_factor(bricks_per_m2, BricksPerSquareMetre),
+    estimation_factor(timber_per_m2, TimberPerSquareMetre),
+    estimation_factor(multi_storey_steel_multiplier, MultiStoreySteelMultiplier),
+    CementQuantity is TotalArea * CementPerSquareMetre,
+    BaseSteelQuantity is TotalArea * SteelPerSquareMetre,
+    BaseTimberQuantity is TotalArea * TimberPerSquareMetre,
     ( FloorCount > 1 ->
-        MultiStoreySteelQuantity is BaseSteelQuantity * 1.5,
-        FloorReasons = ["multi_storey: steel increased by 50%"]
+        MultiStoreySteelQuantity is BaseSteelQuantity * MultiStoreySteelMultiplier,
+        SteelIncreasePercentage is (MultiStoreySteelMultiplier - 1) * 100,
+        format(
+            atom(FloorReason),
+            'multi_storey: steel increased by ~0f%',
+            [SteelIncreasePercentage]
+        ),
+        FloorReasons = [FloorReason]
     ;   MultiStoreySteelQuantity = BaseSteelQuantity,
         FloorReasons = []
     ),
@@ -43,7 +46,7 @@ calculate_materials(TotalArea, FloorCount, RoofType,
         TimberQuantity,
         RoofReasons
     ),
-    BrickQuantity is TotalArea * 60,
+    BrickQuantity is TotalArea * BricksPerSquareMetre,
     append(FloorReasons, RoofReasons, MaterialReasons).
 
 % ---------- Cost ----------
@@ -101,11 +104,13 @@ roof_structure_adjustment(
 ).
 roof_structure_adjustment(hip, InputSteelQuantity, InputTimberQuantity, SteelQuantity, TimberQuantity,
                           ["roof: hip roof needs additional timber support"]) :-
+    estimation_factor(hip_timber_multiplier, HipTimberMultiplier),
     SteelQuantity is InputSteelQuantity,
-    TimberQuantity is InputTimberQuantity * 1.10.
+    TimberQuantity is InputTimberQuantity * HipTimberMultiplier.
 roof_structure_adjustment(flat, InputSteelQuantity, InputTimberQuantity, SteelQuantity, TimberQuantity,
                           ["roof: flat roof needs reinforced slab support"]) :-
-    SteelQuantity is InputSteelQuantity * 1.12,
+    estimation_factor(flat_steel_multiplier, FlatSteelMultiplier),
+    SteelQuantity is InputSteelQuantity * FlatSteelMultiplier,
     TimberQuantity is InputTimberQuantity.
 
 % ---------- Feasibility ----------
@@ -116,13 +121,15 @@ feasibility(FinalCost, BudgetAmount, not_feasible,
     FinalCost > BudgetAmount.
 feasibility(FinalCost, BudgetAmount, conditional,
             ["budget: projected cost is close to limit"]) :-
+    estimation_factor(feasible_budget_ratio, FeasibleBudgetRatio),
     BudgetAmount \= none,
     FinalCost =< BudgetAmount,
-    FinalCost > BudgetAmount * 0.9.
+    FinalCost > BudgetAmount * FeasibleBudgetRatio.
 feasibility(FinalCost, BudgetAmount, feasible,
             ["budget: projected cost within limit"]) :-
+    estimation_factor(feasible_budget_ratio, FeasibleBudgetRatio),
     BudgetAmount \= none,
-    FinalCost =< BudgetAmount * 0.9.
+    FinalCost =< BudgetAmount * FeasibleBudgetRatio.
 
 % ---------- Main ----------
 estimate(BedroomCount, FloorCount, FinishLevel, LocationType, RoofType, BudgetAmount,
