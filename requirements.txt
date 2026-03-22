@@ -1,3 +1,5 @@
 pyswip==0.3.3
 # Note: SWI-Prolog is required by PySwip and must be installed system-wide.
 # Ubuntu/Debian: sudo apt install swi-prolog
+# Windows: install SWI-Prolog from https://www.swi-prolog.org/download/stable
+# and ensure the SWI-Prolog bin directory is available on PATH.

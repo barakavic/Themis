@@ -4,7 +4,7 @@
 :- dynamic roof_cost_multiplier/2.
 :- dynamic estimation_factor/2.
 
-% ---------- Area ----------
+%  Area 
 calculate_area(BedroomCount, FloorCount, TotalArea) :-
     estimation_factor(bedroom_area, BedroomAreaFactor),
     estimation_factor(functional_area_multiplier, FunctionalAreaMultiplier),
@@ -14,7 +14,7 @@ calculate_area(BedroomCount, FloorCount, TotalArea) :-
     AreaWithCirculation is FunctionalArea * (1 + CirculationFactor),
     TotalArea is AreaWithCirculation * FloorCount.
 
-% ---------- Materials ----------
+%  Materials 
 calculate_materials(TotalArea, FloorCount, RoofType,
                     materials(CementQuantity, SteelQuantity, BrickQuantity, TimberQuantity),
                     MaterialReasons) :-
@@ -49,7 +49,7 @@ calculate_materials(TotalArea, FloorCount, RoofType,
     BrickQuantity is TotalArea * BricksPerSquareMetre,
     append(FloorReasons, RoofReasons, MaterialReasons).
 
-% ---------- Cost ----------
+% Cost 
 calculate_base_cost(
     materials(CementQuantity, SteelQuantity, BrickQuantity, TimberQuantity),
     BaseCost
@@ -113,7 +113,7 @@ roof_structure_adjustment(flat, InputSteelQuantity, InputTimberQuantity, SteelQu
     SteelQuantity is InputSteelQuantity * FlatSteelMultiplier,
     TimberQuantity is InputTimberQuantity.
 
-% ---------- Feasibility ----------
+%  Feasibility 
 feasibility(_FinalCost, none, feasible, ["budget: none provided"]).
 feasibility(FinalCost, BudgetAmount, not_feasible,
             ["budget: projected cost exceeds budget"]) :-
@@ -131,7 +131,7 @@ feasibility(FinalCost, BudgetAmount, feasible,
     BudgetAmount \= none,
     FinalCost =< BudgetAmount * FeasibleBudgetRatio.
 
-% ---------- Main ----------
+%  Main 
 estimate(BedroomCount, FloorCount, FinishLevel, LocationType, RoofType, BudgetAmount,
          result(TotalArea, Materials, BaseCost, FinalCost, Feasibility, Reasons)) :-
     calculate_area(BedroomCount, FloorCount, TotalArea),

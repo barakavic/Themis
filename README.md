@@ -44,6 +44,7 @@ data/
 - Python 3.12 or later
 - SWI-Prolog installed system-wide
 - A Python virtual environment with project dependencies installed
+- On Windows, SWI-Prolog's `bin` directory must be available on `PATH`
 
 ## Installation
 
@@ -51,7 +52,7 @@ data/
 2. Install Python dependencies.
 3. Ensure SWI-Prolog is installed and available on your system path.
 
-Example setup:
+Linux/macOS example setup:
 
 ```bash
 python3 -m venv venv
@@ -60,18 +61,44 @@ pip install -r requirements.txt
 sudo apt install swi-prolog
 ```
 
+Windows PowerShell example setup:
+
+```powershell
+py -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Then install SWI-Prolog from the official Windows installer:
+
+- https://www.swi-prolog.org/download/stable
+- During setup, make sure the SWI-Prolog `bin` directory is added to `PATH`, or add it manually afterward
+- After installation, restart your terminal so Python can find `swipl`
+
 ## Running the Application
 
-Run the CLI version:
+Run the CLI version on Linux/macOS:
 
 ```bash
 ./venv/bin/python src/app.py
 ```
 
-Run the Tkinter GUI:
+Run the Tkinter GUI on Linux/macOS:
 
 ```bash
 ./venv/bin/python src/gui.py
+```
+
+Run the CLI version on Windows:
+
+```powershell
+.\venv\Scripts\python.exe src/app.py
+```
+
+Run the Tkinter GUI on Windows:
+
+```powershell
+.\venv\Scripts\python.exe src/gui.py
 ```
 
 ## Example Workflow
